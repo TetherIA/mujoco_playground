@@ -42,7 +42,7 @@
         <geom size="0.01 0.012 0.016" pos="-0.00127744 -0.0455619 -0.0144774" quat="0.708101 0.705072 -0.0294902 -0.024426" type="box" friction="0.7 0.05 0.0002" rgba=".5 .5 .5 .3"/>
       </default>
 
-      <position kp="3.0" inheritrange="1"/>
+      <position kp="3.0"/>
       <!-- armature = rotor inertia * gear ratio^2 = 1.7 * 1e-8 * 288*288 = 0.00149376 -->
       <!-- max torque = 0.2196 = 600/1000*0.366 -->
       <!-- frictionloss = rough guess, small ish value -->

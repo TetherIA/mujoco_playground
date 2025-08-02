@@ -25,8 +25,10 @@ import numpy as np
 
 from mujoco_playground._src import mjx_env
 from mujoco_playground._src import reward
-from mujoco_playground._src.manipulation.leap_hand import base as leap_hand_base
-from mujoco_playground._src.manipulation.leap_hand import leap_hand_constants as consts
+from mujoco_playground._src.manipulation.tetheria_hand import base as tetheria_hand_base
+from mujoco_playground._src.manipulation.tetheria_hand import (
+    tetheria_hand_constants as consts,
+)
 
 
 def default_config() -> config_dict.ConfigDict:
@@ -72,7 +74,7 @@ def default_config() -> config_dict.ConfigDict:
     )
 
 
-class CubeReorient(leap_hand_base.LeapHandEnv):
+class CubeReorient(tetheria_hand_base.TetheriaHandEnv):
     """Reorient a cube to match a goal orientation."""
 
     def __init__(
@@ -106,7 +108,7 @@ class CubeReorient(leap_hand_base.LeapHandEnv):
     def reset(self, rng: jax.Array) -> mjx_env.State:
         # Randomize the goal orientation.
         rng, goal_rng = jax.random.split(rng)
-        goal_quat = leap_hand_base.uniform_quat(goal_rng)
+        goal_quat = tetheria_hand_base.uniform_quat(goal_rng)
 
         # Randomize the hand pose.
         rng, pos_rng, vel_rng = jax.random.split(rng, 3)
@@ -122,7 +124,7 @@ class CubeReorient(leap_hand_base.LeapHandEnv):
         start_pos = jp.array([0.1, 0.0, 0.05]) + jax.random.uniform(
             p_rng, (3,), minval=-0.01, maxval=0.01
         )
-        start_quat = leap_hand_base.uniform_quat(quat_rng)
+        start_quat = tetheria_hand_base.uniform_quat(quat_rng)
         q_cube = jp.array([*start_pos, *start_quat])
         v_cube = jp.zeros(6)
 
@@ -305,7 +307,7 @@ class CubeReorient(leap_hand_base.LeapHandEnv):
         # Noisy cube pose.
         noisy_pose = _get_cube_pose(data)
         info["rng"], key1, key2, key3 = jax.random.split(info["rng"], 4)
-        rand_quat = leap_hand_base.uniform_quat(key1)
+        rand_quat = tetheria_hand_base.uniform_quat(key1)
         rand_pos = jax.random.uniform(key2, (3,), minval=-0.5, maxval=0.5)
         rand_pose = jp.concatenate([rand_pos, rand_quat])
         m = self._config.obs_noise.level * jax.random.bernoulli(
