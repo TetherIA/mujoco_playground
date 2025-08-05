@@ -45,7 +45,7 @@
     <framepos name="if_tip_position" objtype="site" objname="if_tip" reftype="site" refname="grasp_site"/>
     <framepos name="mf_tip_position" objtype="site" objname="mf_tip" reftype="site" refname="grasp_site"/>
     <framepos name="rf_tip_position" objtype="site" objname="rf_tip" reftype="site" refname="grasp_site"/>
-
+    <framepos name="pf_tip_position" objtype="site" objname="pf_tip" reftype="site" refname="grasp_site"/>
     <!-- goal. -->
     <framequat name="cube_goal_orientation" objtype="body" objname="goal"/>
     <framezaxis name="cube_goal_upvector" objtype="body" objname="goal"/>

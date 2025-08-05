@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Base classes for leap hand."""
+"""Base classes for tetheria hand."""
 
 from typing import Any, Dict, Optional, Union
 

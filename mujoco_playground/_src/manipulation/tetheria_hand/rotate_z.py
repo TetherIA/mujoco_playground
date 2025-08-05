@@ -75,6 +75,9 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
 
     def _post_init(self) -> None:
         self._hand_qids = mjx_env.get_qpos_ids(self.mj_model, consts.JOINT_NAMES)
+        self._hand_control_qids = mjx_env.get_qpos_ids(
+            self.mj_model, consts.CONTROLJOINT_NAMES
+        )
         self._hand_dqids = mjx_env.get_qvel_ids(self.mj_model, consts.JOINT_NAMES)
         self._cube_qids = mjx_env.get_qpos_ids(self.mj_model, ["cube_freejoint"])
         self._floor_geom_id = self._mj_model.geom("floor").id
@@ -83,6 +86,7 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
         home_key = self._mj_model.keyframe("home")
         self._init_q = jp.array(home_key.qpos)
         self._default_pose = self._init_q[self._hand_qids]
+        self._default_ctrl = self._init_q[self._hand_control_qids]
         self._lowers, self._uppers = self.mj_model.actuator_ctrlrange.T
 
     def reset(self, rng: jax.Array) -> mjx_env.State:
@@ -90,9 +94,12 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
         rng, pos_rng, vel_rng = jax.random.split(rng, 3)
         q_hand = jp.clip(
             self._default_pose + 0.1 * jax.random.normal(pos_rng, (consts.NQ,)),
-            self._lowers,
-            self._uppers,
+            self._lowers[self._hand_qids],
+            self._uppers[self._hand_qids],
         )
+        # for qid1, qid2 in consts.ENFORCE_JOINT_PAIRS:
+        #     q_hand = q_hand.at[qid2].set(q_hand[qid1])
+
         v_hand = 0.0 * jax.random.normal(vel_rng, (consts.NV,))
 
         # Randomize cube qpos and qvel.
@@ -105,12 +112,13 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
         v_cube = jp.zeros(6)
 
         qpos = jp.concatenate([q_hand, q_cube])
+        q_ctrl = q_hand[self._hand_control_qids]
         qvel = jp.concatenate([v_hand, v_cube])
         data = mjx_env.init(
             self.mjx_model,
             qpos=qpos,
             qvel=qvel,
-            ctrl=q_hand,
+            ctrl=q_ctrl,
             mocap_pos=jp.array([-100, -100, -100]),  # Hide goal for this task.
         )
 
@@ -126,13 +134,16 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
         for k in self._config.reward_config.scales.keys():
             metrics[f"reward/{k}"] = jp.zeros(())
 
-        obs_history = jp.zeros(self._config.history_len * 32)
+        obs_history = jp.zeros(self._config.history_len * 35)
         obs = self._get_obs(data, info, obs_history)
         reward, done = jp.zeros(2)  # pylint: disable=redefined-outer-name
         return mjx_env.State(data, obs, reward, done, metrics, info)
 
     def step(self, state: mjx_env.State, action: jax.Array) -> mjx_env.State:
-        motor_targets = self._default_pose + action * self._config.action_scale
+        motor_targets = (
+            self._default_pose[self._hand_control_qids]
+            + action * self._config.action_scale
+        )
         # NOTE: no clipping.
         data = mjx_env.step(self.mjx_model, state.data, motor_targets, self.n_substeps)
         state.info["motor_targets"] = motor_targets
@@ -241,7 +252,7 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
         return jp.sum(jp.square(torques))
 
     def _cost_energy(self, qvel: jax.Array, qfrc_actuator: jax.Array) -> jax.Array:
-        return jp.sum(jp.abs(qvel) * jp.abs(qfrc_actuator))
+        return jp.sum(jp.abs(qvel[self._hand_control_qids]) * jp.abs(qfrc_actuator))
 
     def _cost_linvel(self, cube_linvel: jax.Array) -> jax.Array:
         return jp.linalg.norm(cube_linvel, ord=1, axis=-1)
@@ -270,22 +281,26 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
     hand_qids = mjx_env.get_qpos_ids(mj_model, consts.JOINT_NAMES)
     hand_body_names = [
         "palm",
-        "if_bs",
-        "if_px",
-        "if_md",
-        "if_ds",
-        "mf_bs",
-        "mf_px",
-        "mf_md",
-        "mf_ds",
-        "rf_bs",
-        "rf_px",
-        "rf_md",
-        "rf_ds",
-        "th_mp",
-        "th_bs",
-        "th_px",
-        "th_ds",
+        "right_pinky_f_link",
+        "right_pinky_proximal_link",
+        "right_pinky_middle_link",
+        "right_pinky_distal_link",
+        "right_middle_f_link",
+        "right_middle_proximal_link",
+        "right_middle_middle_link",
+        "right_middle_distal_link",
+        "right_index_f_link",
+        "right_index_proximal_link",
+        "right_index_middle_link",
+        "right_index_distal_link",
+        "right_ring_f_link",
+        "right_ring_proximal_link",
+        "right_ring_middle_link",
+        "right_ring_distal_link",
+        "right_t_link",
+        "right_thumb_mcp_link",
+        "right_thumb_proximal_link",
+        "right_thumb_distal_link",
     ]
     hand_body_ids = np.array([mj_model.body(n).id for n in hand_body_names])
     fingertip_geoms = ["th_tip", "if_tip", "mf_tip", "rf_tip"]
@@ -324,20 +339,20 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
         qpos0 = model.qpos0
         qpos0 = qpos0.at[hand_qids].set(
             qpos0[hand_qids]
-            + jax.random.uniform(key, shape=(16,), minval=-0.05, maxval=0.05)
+            + jax.random.uniform(key, shape=(20,), minval=-0.05, maxval=0.05)
         )
 
         # Scale static friction: *U(0.9, 1.1).
         rng, key = jax.random.split(rng)
         frictionloss = model.dof_frictionloss[hand_qids] * jax.random.uniform(
-            key, shape=(16,), minval=0.5, maxval=2.0
+            key, shape=(20,), minval=0.5, maxval=2.0
         )
         dof_frictionloss = model.dof_frictionloss.at[hand_qids].set(frictionloss)
 
         # Scale armature: *U(1.0, 1.05).
         rng, key = jax.random.split(rng)
         armature = model.dof_armature[hand_qids] * jax.random.uniform(
-            key, shape=(16,), minval=1.0, maxval=1.05
+            key, shape=(20,), minval=1.0, maxval=1.05
         )
         dof_armature = model.dof_armature.at[hand_qids].set(armature)
 
@@ -361,7 +376,7 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
         # Joint damping: *U(0.8, 1.2).
         rng, key = jax.random.split(rng)
         kd = model.dof_damping[hand_qids] * jax.random.uniform(
-            key, (16,), minval=0.8, maxval=1.2
+            key, (20,), minval=0.8, maxval=1.2
         )
         dof_damping = model.dof_damping.at[hand_qids].set(kd)
 
