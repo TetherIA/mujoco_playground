@@ -21,6 +21,7 @@ import jax.numpy as jp
 from ml_collections import config_dict
 from mujoco import mjx
 import numpy as np
+from jax import debug as jdebug
 
 from mujoco_playground._src import mjx_env
 from mujoco_playground._src.manipulation.tetheria_hand import base as tetheria_hand_base
@@ -86,20 +87,32 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
         home_key = self._mj_model.keyframe("home")
         self._init_q = jp.array(home_key.qpos)
         self._default_pose = self._init_q[self._hand_qids]
-        self._default_ctrl = self._init_q[self._hand_control_qids]
-        self._lowers, self._uppers = self.mj_model.actuator_ctrlrange.T
+        self._lowers, self._uppers = self.mj_model.jnt_range.T
+
+        # Enforce joint pairs at the initial pose for the tetheria hand.
+        self._jointid_enforce_pairs = {}
+        for joint_pair in consts.ENFORCE_JOINT_PAIRS:
+            qid1, qid2 = mjx_env.get_qpos_ids(self.mj_model, joint_pair)
+            self._jointid_enforce_pairs[qid1] = qid2
 
     def reset(self, rng: jax.Array) -> mjx_env.State:
         # Randomize hand qpos and qvel.
         rng, pos_rng, vel_rng = jax.random.split(rng, 3)
+        print(f"default_pose: {self._default_pose}")
+        print(
+            f"lowers: {self._lowers[self._hand_qids]}, upper: {self._uppers[self._hand_qids]}"
+        )
         q_hand = jp.clip(
             self._default_pose + 0.1 * jax.random.normal(pos_rng, (consts.NQ,)),
             self._lowers[self._hand_qids],
             self._uppers[self._hand_qids],
         )
-        # for qid1, qid2 in consts.ENFORCE_JOINT_PAIRS:
-        #     q_hand = q_hand.at[qid2].set(q_hand[qid1])
+        jdebug.print("q_hand = {q}", q=q_hand)
+        # Enforce joint pairs at the initial pose for the tetheria hand.
+        for qid1, qid2 in self._jointid_enforce_pairs.items():
+            q_hand = q_hand.at[qid2].set(q_hand[qid1])
 
+        jdebug.print("enforcedq_hand = {q}", q=q_hand)
         v_hand = 0.0 * jax.random.normal(vel_rng, (consts.NV,))
 
         # Randomize cube qpos and qvel.
@@ -185,10 +198,10 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
 
         state = jp.concatenate(
             [
-                noisy_joint_angles,  # 16
-                info["last_act"],  # 16
+                noisy_joint_angles,  # 20
+                info["last_act"],  # 15
             ]
-        )  # 48
+        )  # 35
         obs_history = jp.roll(obs_history, state.size)
         obs_history = obs_history.at[: state.size].set(state)
 
