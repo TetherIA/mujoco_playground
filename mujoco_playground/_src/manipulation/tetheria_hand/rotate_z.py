@@ -98,21 +98,21 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
     def reset(self, rng: jax.Array) -> mjx_env.State:
         # Randomize hand qpos and qvel.
         rng, pos_rng, vel_rng = jax.random.split(rng, 3)
-        print(f"default_pose: {self._default_pose}")
-        print(
-            f"lowers: {self._lowers[self._hand_qids]}, upper: {self._uppers[self._hand_qids]}"
-        )
+        # print(f"default_pose: {self._default_pose}")
+        # print(
+        #     f"lowers: {self._lowers[self._hand_qids]}, upper: {self._uppers[self._hand_qids]}"
+        # )
         q_hand = jp.clip(
             self._default_pose + 0.1 * jax.random.normal(pos_rng, (consts.NQ,)),
             self._lowers[self._hand_qids],
             self._uppers[self._hand_qids],
         )
-        jdebug.print("q_hand = {q}", q=q_hand)
+        # jdebug.print("q_hand = {q}", q=q_hand)
         # Enforce joint pairs at the initial pose for the tetheria hand.
         for qid1, qid2 in self._jointid_enforce_pairs.items():
             q_hand = q_hand.at[qid2].set(q_hand[qid1])
 
-        jdebug.print("enforcedq_hand = {q}", q=q_hand)
+        # jdebug.print("enforcedq_hand = {q}", q=q_hand)
         v_hand = 0.0 * jax.random.normal(vel_rng, (consts.NV,))
 
         # Randomize cube qpos and qvel.
@@ -152,6 +152,31 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
         reward, done = jp.zeros(2)  # pylint: disable=redefined-outer-name
         return mjx_env.State(data, obs, reward, done, metrics, info)
 
+    def _check_for_nan(self, name: str, value: jax.Array):
+        nan_mask = jp.isnan(value)
+        has_nan = jp.any(nan_mask)
+
+        def do_print(val):
+            jax.debug.print("[NaN Detected] {name}: value={val}", name=name, val=val)
+            return val
+
+        def skip_print(val):
+            return val
+
+        # 只传入 JAX-compatible 的 value，本地保存 name
+        _ = jax.lax.cond(has_nan, do_print, skip_print, value)
+
+    def breakpoint_if_nonfinite(self, x):
+        is_finite = jp.isfinite(x).all()
+
+        def true_fn(x):
+            pass
+
+        def false_fn(x):
+            jax.debug.breakpoint()
+
+        jax.lax.cond(is_finite, true_fn, false_fn, x)
+
     def step(self, state: mjx_env.State, action: jax.Array) -> mjx_env.State:
         motor_targets = (
             self._default_pose[self._hand_control_qids]
@@ -178,6 +203,12 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
 
         done = done.astype(reward.dtype)
         state = state.replace(data=data, obs=obs, reward=reward, done=done)
+        self._check_for_nan("state.data.qpos", data.qpos)
+        # self._check_for_nan("state.data.qvel", data.qvel)
+        # self._check_for_nan("state.data.ctrl", data.ctrl)
+        # self.breakpoint_if_nonfinite(data.qpos)
+        # self.breakpoint_if_nonfinite(data.qvel)
+        # self.breakpoint_if_nonfinite(data.ctrl)
         return state
 
     def _get_termination(self, data: mjx.Data) -> jax.Array:
