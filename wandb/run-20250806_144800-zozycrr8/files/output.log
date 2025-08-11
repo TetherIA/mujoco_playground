@@ -1,0 +1,2 @@
+/home/nan/CodeRepos/tetheria_rl/.venv/lib/python3.11/site-packages/jax/_src/interpreters/xla.py:119: RuntimeWarning: overflow encountered in cast
+  return np.asarray(x, dtypes.canonicalize_dtype(x.dtype))

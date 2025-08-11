@@ -1,5 +1,4 @@
 <mujoco>
-  <compiler angle="radian" meshdir="meshes/" />
   <default>
     <default class="cube">
       <geom friction=".3 0.05" conaffinity="2" condim="3"/>

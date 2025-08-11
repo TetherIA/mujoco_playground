@@ -1,0 +1,15 @@
+/home/nan/CodeRepos/tetheria_rl/.venv/lib/python3.10/site-packages/jax/_src/interpreters/xla.py:119: RuntimeWarning: overflow encountered in cast
+  return np.asarray(x, dtypes.canonicalize_dtype(x.dtype))
+[Checkpoint] Saved to /home/nan/CodeRepos/tetheria_rl/mujoco_playground/checkpoints/ppo_LeapCubeReorient_20250710_164548/0
+[Checkpoint] Saved to /home/nan/CodeRepos/tetheria_rl/mujoco_playground/checkpoints/ppo_LeapCubeReorient_20250710_164548/10813440
+[Checkpoint] Saved to /home/nan/CodeRepos/tetheria_rl/mujoco_playground/checkpoints/ppo_LeapCubeReorient_20250710_164548/21626880
+[Checkpoint] Saved to /home/nan/CodeRepos/tetheria_rl/mujoco_playground/checkpoints/ppo_LeapCubeReorient_20250710_164548/32440320
+[Checkpoint] Saved to /home/nan/CodeRepos/tetheria_rl/mujoco_playground/checkpoints/ppo_LeapCubeReorient_20250710_164548/43253760
+[Checkpoint] Saved to /home/nan/CodeRepos/tetheria_rl/mujoco_playground/checkpoints/ppo_LeapCubeReorient_20250710_164548/54067200
+[Checkpoint] Saved to /home/nan/CodeRepos/tetheria_rl/mujoco_playground/checkpoints/ppo_LeapCubeReorient_20250710_164548/64880640
+[Checkpoint] Saved to /home/nan/CodeRepos/tetheria_rl/mujoco_playground/checkpoints/ppo_LeapCubeReorient_20250710_164548/75694080
+[Checkpoint] Saved to /home/nan/CodeRepos/tetheria_rl/mujoco_playground/checkpoints/ppo_LeapCubeReorient_20250710_164548/86507520
+[Checkpoint] Saved to /home/nan/CodeRepos/tetheria_rl/mujoco_playground/checkpoints/ppo_LeapCubeReorient_20250710_164548/97320960
+[Checkpoint] Saved to /home/nan/CodeRepos/tetheria_rl/mujoco_playground/checkpoints/ppo_LeapCubeReorient_20250710_164548/108134400
+[Checkpoint] Saved to /home/nan/CodeRepos/tetheria_rl/mujoco_playground/checkpoints/ppo_LeapCubeReorient_20250710_164548/118947840
+[Checkpoint] Saved to /home/nan/CodeRepos/tetheria_rl/mujoco_playground/checkpoints/ppo_LeapCubeReorient_20250710_164548/129761280
