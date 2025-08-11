@@ -21,7 +21,6 @@ import jax.numpy as jp
 from ml_collections import config_dict
 from mujoco import mjx
 import numpy as np
-from jax import debug as jdebug
 
 from mujoco_playground._src import mjx_env
 from mujoco_playground._src.manipulation.tetheria_hand import base as tetheria_hand_base
@@ -76,9 +75,6 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
 
     def _post_init(self) -> None:
         self._hand_qids = mjx_env.get_qpos_ids(self.mj_model, consts.JOINT_NAMES)
-        self._hand_control_qids = mjx_env.get_qpos_ids(
-            self.mj_model, consts.CONTROLJOINT_NAMES
-        )
         self._hand_dqids = mjx_env.get_qvel_ids(self.mj_model, consts.JOINT_NAMES)
         self._cube_qids = mjx_env.get_qpos_ids(self.mj_model, ["cube_freejoint"])
         self._floor_geom_id = self._mj_model.geom("floor").id
@@ -87,32 +83,16 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
         home_key = self._mj_model.keyframe("home")
         self._init_q = jp.array(home_key.qpos)
         self._default_pose = self._init_q[self._hand_qids]
-        self._lowers, self._uppers = self.mj_model.jnt_range.T
-
-        # Enforce joint pairs at the initial pose for the tetheria hand.
-        self._jointid_enforce_pairs = {}
-        for joint_pair in consts.ENFORCE_JOINT_PAIRS:
-            qid1, qid2 = mjx_env.get_qpos_ids(self.mj_model, joint_pair)
-            self._jointid_enforce_pairs[qid1] = qid2
+        self._lowers, self._uppers = self.mj_model.actuator_ctrlrange.T
 
     def reset(self, rng: jax.Array) -> mjx_env.State:
         # Randomize hand qpos and qvel.
         rng, pos_rng, vel_rng = jax.random.split(rng, 3)
-        # print(f"default_pose: {self._default_pose}")
-        # print(
-        #     f"lowers: {self._lowers[self._hand_qids]}, upper: {self._uppers[self._hand_qids]}"
-        # )
         q_hand = jp.clip(
             self._default_pose + 0.1 * jax.random.normal(pos_rng, (consts.NQ,)),
-            self._lowers[self._hand_qids],
-            self._uppers[self._hand_qids],
+            self._lowers,
+            self._uppers,
         )
-        # jdebug.print("q_hand = {q}", q=q_hand)
-        # Enforce joint pairs at the initial pose for the tetheria hand.
-        for qid1, qid2 in self._jointid_enforce_pairs.items():
-            q_hand = q_hand.at[qid2].set(q_hand[qid1])
-
-        # jdebug.print("enforcedq_hand = {q}", q=q_hand)
         v_hand = 0.0 * jax.random.normal(vel_rng, (consts.NV,))
 
         # Randomize cube qpos and qvel.
@@ -125,13 +105,12 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
         v_cube = jp.zeros(6)
 
         qpos = jp.concatenate([q_hand, q_cube])
-        q_ctrl = q_hand[self._hand_control_qids]
         qvel = jp.concatenate([v_hand, v_cube])
         data = mjx_env.init(
             self.mjx_model,
             qpos=qpos,
             qvel=qvel,
-            ctrl=q_ctrl,
+            ctrl=q_hand,
             mocap_pos=jp.array([-100, -100, -100]),  # Hide goal for this task.
         )
 
@@ -147,41 +126,13 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
         for k in self._config.reward_config.scales.keys():
             metrics[f"reward/{k}"] = jp.zeros(())
 
-        obs_history = jp.zeros(self._config.history_len * 35)
+        obs_history = jp.zeros(self._config.history_len * 40)
         obs = self._get_obs(data, info, obs_history)
         reward, done = jp.zeros(2)  # pylint: disable=redefined-outer-name
         return mjx_env.State(data, obs, reward, done, metrics, info)
 
-    def _check_for_nan(self, name: str, value: jax.Array):
-        nan_mask = jp.isnan(value)
-        has_nan = jp.any(nan_mask)
-
-        def do_print(val):
-            jax.debug.print("[NaN Detected] {name}: value={val}", name=name, val=val)
-            return val
-
-        def skip_print(val):
-            return val
-
-        # 只传入 JAX-compatible 的 value，本地保存 name
-        _ = jax.lax.cond(has_nan, do_print, skip_print, value)
-
-    def breakpoint_if_nonfinite(self, x):
-        is_finite = jp.isfinite(x).all()
-
-        def true_fn(x):
-            pass
-
-        def false_fn(x):
-            jax.debug.breakpoint()
-
-        jax.lax.cond(is_finite, true_fn, false_fn, x)
-
     def step(self, state: mjx_env.State, action: jax.Array) -> mjx_env.State:
-        motor_targets = (
-            self._default_pose[self._hand_control_qids]
-            + action * self._config.action_scale
-        )
+        motor_targets = self._default_pose + action * self._config.action_scale
         # NOTE: no clipping.
         data = mjx_env.step(self.mjx_model, state.data, motor_targets, self.n_substeps)
         state.info["motor_targets"] = motor_targets
@@ -203,12 +154,6 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
 
         done = done.astype(reward.dtype)
         state = state.replace(data=data, obs=obs, reward=reward, done=done)
-        self._check_for_nan("state.data.qpos", data.qpos)
-        # self._check_for_nan("state.data.qvel", data.qvel)
-        # self._check_for_nan("state.data.ctrl", data.ctrl)
-        # self.breakpoint_if_nonfinite(data.qpos)
-        # self.breakpoint_if_nonfinite(data.qvel)
-        # self.breakpoint_if_nonfinite(data.ctrl)
         return state
 
     def _get_termination(self, data: mjx.Data) -> jax.Array:
@@ -229,10 +174,10 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
 
         state = jp.concatenate(
             [
-                noisy_joint_angles,  # 20
-                info["last_act"],  # 15
+                noisy_joint_angles,  # 16
+                info["last_act"],  # 16
             ]
-        )  # 35
+        )  # 48
         obs_history = jp.roll(obs_history, state.size)
         obs_history = obs_history.at[: state.size].set(state)
 
@@ -296,7 +241,7 @@ class CubeRotateZAxis(tetheria_hand_base.TetheriaHandEnv):
         return jp.sum(jp.square(torques))
 
     def _cost_energy(self, qvel: jax.Array, qfrc_actuator: jax.Array) -> jax.Array:
-        return jp.sum(jp.abs(qvel[self._hand_control_qids]) * jp.abs(qfrc_actuator))
+        return jp.sum(jp.abs(qvel) * jp.abs(qfrc_actuator))
 
     def _cost_linvel(self, cube_linvel: jax.Array) -> jax.Array:
         return jp.linalg.norm(cube_linvel, ord=1, axis=-1)
@@ -347,7 +292,7 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
         "right_thumb_distal_link",
     ]
     hand_body_ids = np.array([mj_model.body(n).id for n in hand_body_names])
-    fingertip_geoms = ["th_tip", "if_tip", "mf_tip", "rf_tip"]
+    fingertip_geoms = ["th_tip", "if_tip", "mf_tip", "rf_tip", "pf_tip"]
     fingertip_geom_ids = [mj_model.geom(g).id for g in fingertip_geoms]
 
     @jax.vmap
