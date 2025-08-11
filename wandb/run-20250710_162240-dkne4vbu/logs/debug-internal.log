@@ -1,7 +1,0 @@
-{"time":"2025-07-10T16:22:40.889972232-07:00","level":"INFO","msg":"stream: starting","core version":"0.20.1","symlink path":"/home/nan/CodeRepos/tetheria_rl/mujoco_playground/wandb/run-20250710_162240-dkne4vbu/logs/debug-core.log"}
-{"time":"2025-07-10T16:22:41.140197155-07:00","level":"INFO","msg":"stream: created new stream","id":"dkne4vbu"}
-{"time":"2025-07-10T16:22:41.140241682-07:00","level":"INFO","msg":"stream: started","id":"dkne4vbu"}
-{"time":"2025-07-10T16:22:41.140621535-07:00","level":"INFO","msg":"handler: started","stream_id":"dkne4vbu"}
-{"time":"2025-07-10T16:22:41.140632471-07:00","level":"INFO","msg":"writer: Do: started","stream_id":"dkne4vbu"}
-{"time":"2025-07-10T16:22:41.141001069-07:00","level":"INFO","msg":"sender: started","stream_id":"dkne4vbu"}
-{"time":"2025-07-10T16:22:41.357474515-07:00","level":"INFO","msg":"Starting system monitor"}

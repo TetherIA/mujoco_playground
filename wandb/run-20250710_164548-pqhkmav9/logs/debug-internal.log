@@ -1,8 +1,0 @@
-{"time":"2025-07-10T16:45:48.226955597-07:00","level":"INFO","msg":"stream: starting","core version":"0.20.1","symlink path":"/home/nan/CodeRepos/tetheria_rl/mujoco_playground/wandb/run-20250710_164548-pqhkmav9/logs/debug-core.log"}
-{"time":"2025-07-10T16:45:48.469622808-07:00","level":"INFO","msg":"stream: created new stream","id":"pqhkmav9"}
-{"time":"2025-07-10T16:45:48.469668466-07:00","level":"INFO","msg":"stream: started","id":"pqhkmav9"}
-{"time":"2025-07-10T16:45:48.469708043-07:00","level":"INFO","msg":"sender: started","stream_id":"pqhkmav9"}
-{"time":"2025-07-10T16:45:48.469706175-07:00","level":"INFO","msg":"writer: Do: started","stream_id":"pqhkmav9"}
-{"time":"2025-07-10T16:45:48.469737247-07:00","level":"INFO","msg":"handler: started","stream_id":"pqhkmav9"}
-{"time":"2025-07-10T16:45:48.613189502-07:00","level":"INFO","msg":"Starting system monitor"}
-{"time":"2025-07-10T16:53:08.817456124-07:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/mohityadavtetheria-tetheria-ai/mujoco-playground/pqhkmav9/file_stream","body":"\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>502 Server Error</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Server Error</h1>\n<h2>The server encountered a temporary error and could not complete your request.<p>Please try again in 30 seconds.</h2>\n<h2></h2>\n</body></html>\n"}

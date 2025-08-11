@@ -1,4 +1,0 @@
-/home/nan/CodeRepos/tetheria_rl/.venv/lib/python3.10/site-packages/jax/_src/interpreters/xla.py:119: RuntimeWarning: overflow encountered in cast
-  return np.asarray(x, dtypes.canonicalize_dtype(x.dtype))
-[Checkpoint] Saved to /home/nan/CodeRepos/tetheria_rl/mujoco_playground/checkpoints/ppo_LeapCubeRotateZAxis_20250710_162241/0
-[Checkpoint] Saved to /home/nan/CodeRepos/tetheria_rl/mujoco_playground/checkpoints/ppo_LeapCubeRotateZAxis_20250710_162241/11141120
