@@ -70,7 +70,6 @@ FINGERTIP_NAMES = [
     "th_tip",
 ]
 
-<<<<<<< HEAD
 
 SENSOR_TENDON_NAMES = [
     "len_if",
@@ -83,17 +82,13 @@ SENSOR_TENDON_NAMES = [
 
 SENSOR_JOINT_NAMES = [
     "len_th_abd",
-=======
-SENSOR_TENDON_NAMES = [
-    "len_if_tendon0",
-    "len_mf_tendon0",
-    "len_rf_tendon0",
-    "len_pf_tendon0",
-    "len_th_tendon1",
-    "len_th_tendon2",
 ]
 
-SENSOR_JOINT_NAMES = [
-    "qpos_th_cmc_abd",
->>>>>>> rescue-S1
+SENSOR_TENDON_NAMES = [
+    "len_if",
+    "len_mf",
+    "len_rf",
+    "len_pf",
+    "len_th1",
+    "len_th2",
 ]
