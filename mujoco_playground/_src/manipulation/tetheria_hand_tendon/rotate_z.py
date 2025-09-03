@@ -257,6 +257,7 @@ class CubeRotateZAxis(tetheria_hand_tendon_base.TetheriaHandEnv):
         state = jp.concatenate(
             [
                 noisy_tendon_lengths,
+                noisy_joint_angles,
                 info["last_act"],
             ]
         )
