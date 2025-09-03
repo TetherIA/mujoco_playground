@@ -4,28 +4,27 @@ import mujoco
 import mujoco.viewer
 import glfw
 
-MODEL = "/home/nan/CodeRepos/tetheria_rl/mujoco_playground/mujoco_playground/_src/manipulation/tetheria_hand_tendon/xmls/PreGen1_RightHand_Tendon_thumb.xml"
+MODEL = "/home/nan/CodeRepos/tetheria_rl/mujoco_playground/mujoco_playground/_src/manipulation/tetheria_hand/xmls/PreGen1_RightHand_Tendon_thumb.xml"
 
 m = mujoco.MjModel.from_xml_path(MODEL)
 d = mujoco.MjData(m)
 
-# 传感器切片（<tendonpos name="len_t1" tendon="pf_tendon"/>）
+# Sensor slice (<tendonpos name="len_t1" tendon="pf_tendon"/>)
 sid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SENSOR, "len_t1")
 sadr = m.sensor_adr[sid]
 sdim = m.sensor_dim[sid]
 
-# 肌腱 id
+# Tendon id
 tid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_TENDON, "th_tendon2")
 
 with mujoco.viewer.launch_passive(m, d) as viewer:
     dt = m.opt.timestep
     last_update = 0.0
 
-    # 初始化 min/max
+    # Initialize min/max
     min_len, max_len = float("inf"), float("-inf")
 
     while viewer.is_running():
-        d.ctrl
         mujoco.mj_step(m, d)
         viewer.sync()
 
@@ -35,7 +34,7 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
             len_direct = float(d.ten_length[tid])
             vel_direct = float(d.ten_velocity[tid])
 
-            # 更新 min/max
+            # Update min/max
             min_len = min(min_len, len_direct)
             max_len = max(max_len, len_direct)
 
@@ -55,5 +54,5 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
 
             last_update = now
 
-    # 窗口关闭后打印最终结果
+    # Print final results after window closes
     print(f"Final tendon range: min={min_len:.6f}, max={max_len:.6f}")

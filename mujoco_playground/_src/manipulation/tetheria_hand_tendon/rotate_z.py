@@ -44,6 +44,7 @@ def default_config() -> config_dict.ConfigDict:
             level=1.0,
             scales=config_dict.create(
                 joint_pos=0.05,
+                tendon_length=0.0005,
             ),
         ),
         reward_config=config_dict.create(
@@ -133,8 +134,8 @@ class CubeRotateZAxis(tetheria_hand_tendon_base.TetheriaHandEnv):
         for k in self._config.reward_config.scales.keys():
             metrics[f"reward/{k}"] = jp.zeros(())
 
-        # Change: 23 is the sum of the number of the joints (16) and the number of the control actions (7)
-        obs_history = jp.zeros(self._config.history_len * 23)
+        # Change: 14 is the sum of the number of the tendon/joint sensors (7) and the number of the control actions (7)
+        obs_history = jp.zeros(self._config.history_len * 14)
         obs = self._get_obs(data, info, obs_history)
         reward, done = jp.zeros(2)  # pylint: disable=redefined-outer-name
         return mjx_env.State(data, obs, reward, done, metrics, info)
@@ -168,10 +169,83 @@ class CubeRotateZAxis(tetheria_hand_tendon_base.TetheriaHandEnv):
         fall_termination = self.get_cube_position(data)[2] < -0.05
         return fall_termination
 
+    # def _get_obs(
+    #     self, data: mjx.Data, info: dict[str, Any], obs_history: jax.Array
+    # ) -> Dict[str, jax.Array]:
+    #     joint_angles = data.qpos[self._hand_qids]
+    #     info["rng"], noise_rng = jax.random.split(info["rng"])
+    #     noisy_joint_angles = (
+    #         joint_angles
+    #         + (2 * jax.random.uniform(noise_rng, shape=joint_angles.shape) - 1)
+    #         * self._config.noise_config.level
+    #         * self._config.noise_config.scales.joint_pos
+    #     )
+
+    #     state = jp.concatenate(
+    #         [
+    #             noisy_joint_angles,  # Change: 16 (leap hand) to 20 (tetheria hand)
+    #             info["last_act"],  # Change: 16 (leap hand) to 15 (tetheria hand)
+    #         ]
+    #     )  # 48
+    #     obs_history = jp.roll(obs_history, state.size)
+    #     obs_history = obs_history.at[: state.size].set(state)
+
+    #     cube_pos = self.get_cube_position(data)
+    #     palm_pos = self.get_palm_position(data)
+    #     cube_pos_error = palm_pos - cube_pos
+    #     cube_quat = self.get_cube_orientation(data)
+    #     cube_angvel = self.get_cube_angvel(data)
+    #     cube_linvel = self.get_cube_linvel(data)
+    #     fingertip_positions = self.get_fingertip_positions(data)
+    #     joint_torques = data.actuator_force
+
+    #     privileged_state = jp.concatenate(
+    #         [
+    #             state,
+    #             joint_angles,
+    #             data.qvel[self._hand_dqids],
+    #             joint_torques,
+    #             fingertip_positions,
+    #             cube_pos_error,
+    #             cube_quat,
+    #             cube_angvel,
+    #             cube_linvel,
+    #         ]
+    #     )
+
+    #     return {
+    #         "state": obs_history,
+    #         "privileged_state": privileged_state,
+    #     }
+
     def _get_obs(
         self, data: mjx.Data, info: dict[str, Any], obs_history: jax.Array
     ) -> Dict[str, jax.Array]:
-        joint_angles = data.qpos[self._hand_qids]
+
+        info["rng"], noise_rng = jax.random.split(info["rng"])
+
+        # ------- tendon length sensor -------
+        tendon_lengths = jp.zeros((len(consts.SENSOR_TENDON_NAMES),), dtype=jp.float32)
+        for idx, name in enumerate(consts.SENSOR_TENDON_NAMES):
+            v = mjx_env.get_sensor_data(self.mj_model, data, name)
+            v = jp.ravel(v)[0]
+            tendon_lengths = tendon_lengths.at[idx].set(v)
+
+        info["rng"], noise_rng = jax.random.split(info["rng"])
+        noisy_tendon_lengths = (
+            tendon_lengths
+            + (2 * jax.random.uniform(noise_rng, shape=tendon_lengths.shape) - 1)
+            * self._config.noise_config.level
+            * self._config.noise_config.scales.tendon_length
+        )
+
+        # ------- joint angle sensor -------
+        joint_angles = jp.zeros((len(consts.SENSOR_JOINT_NAMES),), dtype=jp.float32)
+        for idx, name in enumerate(consts.SENSOR_JOINT_NAMES):
+            v = mjx_env.get_sensor_data(self.mj_model, data, name)  # 可能是 shape=(1,)
+            v = jp.ravel(v)[0]
+            joint_angles = joint_angles.at[idx].set(v)
+
         info["rng"], noise_rng = jax.random.split(info["rng"])
         noisy_joint_angles = (
             joint_angles
@@ -182,10 +256,14 @@ class CubeRotateZAxis(tetheria_hand_tendon_base.TetheriaHandEnv):
 
         state = jp.concatenate(
             [
-                noisy_joint_angles,  # Change: 16 (leap hand) to 20 (tetheria hand)
-                info["last_act"],  # Change: 16 (leap hand) to 15 (tetheria hand)
+                noisy_tendon_lengths,
+                noisy_joint_angles,
+                info["last_act"],
             ]
-        )  # 48
+        )
+
+        joint_angles = data.qpos[self._hand_qids]
+        info["rng"], noise_rng = jax.random.split(info["rng"])
         obs_history = jp.roll(obs_history, state.size)
         obs_history = obs_history.at[: state.size].set(state)
 
