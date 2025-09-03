@@ -796,7 +796,6 @@
   </sensor>
 
   <equality>
-    <joint joint1="right_thumb_mcp" joint2="right_thumb_ip"/>
     <joint joint1="right_index_pip" joint2="right_index_dip"/>
     <joint joint1="right_middle_pip" joint2="right_middle_dip"/>
     <joint joint1="right_ring_pip" joint2="right_ring_dip"/>
