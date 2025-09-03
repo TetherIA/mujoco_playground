@@ -69,3 +69,12 @@ FINGERTIP_NAMES = [
     "pf_tip",
     "th_tip",
 ]
+
+SENSOR_TENDON_NAMES = [
+    "if_tendon0",
+    "mf_tendon0",
+    "rf_tendon0",
+    "pf_tendon0",
+    "th_tendon1",
+    "th_tendon2",
+]
