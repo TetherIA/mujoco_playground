@@ -242,7 +242,7 @@ class CubeRotateZAxis(tetheria_hand_tendon_base.TetheriaHandEnv):
         # ------- joint angle sensor -------
         joint_angles = jp.zeros((len(consts.SENSOR_JOINT_NAMES),), dtype=jp.float32)
         for idx, name in enumerate(consts.SENSOR_JOINT_NAMES):
-            v = mjx_env.get_sensor_data(self.mj_model, data, name)  # 可能是 shape=(1,)
+            v = mjx_env.get_sensor_data(self.mj_model, data, name)
             v = jp.ravel(v)[0]
             joint_angles = joint_angles.at[idx].set(v)
 
@@ -257,7 +257,6 @@ class CubeRotateZAxis(tetheria_hand_tendon_base.TetheriaHandEnv):
         state = jp.concatenate(
             [
                 noisy_tendon_lengths,
-                noisy_joint_angles,
                 info["last_act"],
             ]
         )
