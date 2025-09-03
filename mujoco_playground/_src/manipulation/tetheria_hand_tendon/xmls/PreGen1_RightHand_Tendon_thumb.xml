@@ -727,7 +727,7 @@
       <site site="pf_proximal_spring1_s0"/>
     </spatial>
 
-    <spatial name="th_tendon1" width="0.0001" rgba="0 0 1 1">
+    <spatial name="th_tendon1" width="0.0001" rgba="1 0 0 1">
       <site site="th_t_tendon0_s0"/>
       <geom geom ="th_t_tendon0_g0"/>
       <site site="th_t_tendon0_s1"/>
@@ -738,7 +738,7 @@
       <site site="th_mcp_tendon0_s0"/>
     </spatial>
 
-    <spatial name="th_tendon2" width="0.0001" rgba="1 0 0 1">
+    <spatial name="th_tendon2" width="0.0001" rgba="0 0 1 1">
       <site site="th_t_tendon1_s0"/>
       <geom geom ="th_t_tendon1_g0"/>
       <site site="th_t_tendon1_s1"/>
@@ -778,6 +778,7 @@
     <position name="right_th1_A_pip" tendon="th_tendon1" ctrlrange="0.026152 0.038389" kp="20000" />
     <position name="right_th2_A_pip" tendon="th_tendon2" ctrlrange="0.081568 0.112138" kp="20000" />
 
+
     <!--<position name="right_thumb_A_cmc_flex" joint="right_thumb_cmc_flex" class="thumb_axl" />
     <position name="right_thumb_A_pip" joint="right_thumb_mcp" class="thumb_mcp" /> -->
     <!-- <position name="right_thumb_A_dip" joint="right_thumb_ip" class="thumb_ipl" /> -->
@@ -795,6 +796,7 @@
   </sensor>
 
   <equality>
+    <joint joint1="right_thumb_mcp" joint2="right_thumb_ip"/>
     <joint joint1="right_index_pip" joint2="right_index_dip"/>
     <joint joint1="right_middle_pip" joint2="right_middle_dip"/>
     <joint joint1="right_ring_pip" joint2="right_ring_dip"/>
